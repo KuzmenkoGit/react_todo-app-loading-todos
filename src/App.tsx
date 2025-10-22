@@ -5,15 +5,25 @@ import TodoList from './components/TodoList/TodoList';
 import { Todo } from './types/Todo';
 import { getTodos } from './api/todos';
 import classNames from 'classnames';
+import TodoHeader from './components/TodoHeader/TodoHeader';
 
-type StatusTodos = 'completed' | 'active' | 'all';
+enum ErrorMessages {
+  NO_ERROR = '',
+  ERROR_LOAD_TODOS = 'Unable to load todos',
+}
+
+enum StatusTodos {
+  COMPLETED,
+  ACTIVE,
+  ALL,
+}
 
 const filtredTodos = (status: StatusTodos, todos: Todo[]): Todo[] => {
   return todos.filter(todo => {
     switch (status) {
-      case 'active':
+      case StatusTodos.ACTIVE:
         return !todo.completed;
-      case 'completed':
+      case StatusTodos.COMPLETED:
         return todo.completed;
       default:
         return true;
@@ -23,14 +33,18 @@ const filtredTodos = (status: StatusTodos, todos: Todo[]): Todo[] => {
 
 export const App: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [filterStatus, setFilterStatus] = useState<StatusTodos>('all');
+  const [filterStatus, setFilterStatus] = useState<StatusTodos>(
+    StatusTodos.ALL,
+  );
 
-  const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState<ErrorMessages>(
+    ErrorMessages.NO_ERROR,
+  );
 
   useEffect(() => {
     getTodos()
       .then(setTodos)
-      .catch(() => setErrorMessage('Unable to load todos'));
+      .catch(() => setErrorMessage(ErrorMessages.ERROR_LOAD_TODOS));
   }, []);
 
   useEffect(() => {
@@ -39,7 +53,7 @@ export const App: React.FC = () => {
     }
 
     const timerId = setTimeout(() => {
-      setErrorMessage('');
+      setErrorMessage(ErrorMessages.NO_ERROR);
     }, 3000);
 
     return () => clearInterval(timerId);
@@ -47,33 +61,12 @@ export const App: React.FC = () => {
 
   const filterTodos = filtredTodos(filterStatus, todos);
 
-  function handleFiltringTodos(status: StatusTodos) {
-    setFilterStatus(status);
-  }
-
   return (
     <div className="todoapp">
       <h1 className="todoapp__title">todos</h1>
 
       <div className="todoapp__content">
-        <header className="todoapp__header">
-          {/* this button should have `active` class only if all todos are completed */}
-          <button
-            type="button"
-            className="todoapp__toggle-all active"
-            data-cy="ToggleAllButton"
-          />
-
-          {/* Add a todo on form submit */}
-          <form>
-            <input
-              data-cy="NewTodoField"
-              type="text"
-              className="todoapp__new-todo"
-              placeholder="What needs to be done?"
-            />
-          </form>
-        </header>
+        <TodoHeader />
 
         <TodoList todos={filterTodos} />
 
@@ -89,10 +82,10 @@ export const App: React.FC = () => {
               <a
                 href="#/"
                 className={classNames('filter__link', {
-                  selected: filterStatus === 'all',
+                  selected: filterStatus === StatusTodos.ALL,
                 })}
                 data-cy="FilterLinkAll"
-                onClick={() => handleFiltringTodos('all')}
+                onClick={() => setFilterStatus(StatusTodos.ALL)}
               >
                 All
               </a>
@@ -100,10 +93,10 @@ export const App: React.FC = () => {
               <a
                 href="#/active"
                 className={classNames('filter__link', {
-                  selected: filterStatus === 'active',
+                  selected: filterStatus === StatusTodos.ACTIVE,
                 })}
                 data-cy="FilterLinkActive"
-                onClick={() => handleFiltringTodos('active')}
+                onClick={() => setFilterStatus(StatusTodos.ACTIVE)}
               >
                 Active
               </a>
@@ -111,10 +104,10 @@ export const App: React.FC = () => {
               <a
                 href="#/completed"
                 className={classNames('filter__link', {
-                  selected: filterStatus === 'completed',
+                  selected: filterStatus === StatusTodos.COMPLETED,
                 })}
                 data-cy="FilterLinkCompleted"
-                onClick={() => handleFiltringTodos('completed')}
+                onClick={() => setFilterStatus(StatusTodos.COMPLETED)}
               >
                 Completed
               </a>
@@ -151,7 +144,7 @@ export const App: React.FC = () => {
           data-cy="HideErrorButton"
           type="button"
           className="delete"
-          onClick={() => setErrorMessage('')}
+          onClick={() => setErrorMessage(ErrorMessages.NO_ERROR)}
         />
         {/* show only one message at a time */}
         {errorMessage}
